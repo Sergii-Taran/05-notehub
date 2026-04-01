@@ -4,3 +4,8 @@ export interface Note {
   content: string;
   createdAt: string;
 }
+
+export interface NoteTag {
+  id: string;
+  name: string;
+}
