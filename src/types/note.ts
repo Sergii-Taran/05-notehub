@@ -9,3 +9,8 @@ export interface NoteTag {
   id: string;
   name: string;
 }
+
+export interface NotesResponse {
+  notes: Note[];
+  totalPages: number;
+}
