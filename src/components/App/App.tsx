@@ -6,6 +6,9 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 
+import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+
 import { fetchNotes, createNote } from '../../services/noteService';
 import type { NotesResponse } from '../../types/note';
 
@@ -32,7 +35,14 @@ function App() {
   const mutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
+      toast.success('Note created successfully ✅');
+
       queryClient.invalidateQueries({ queryKey: ['notes'] });
+
+      setIsOpen(false); // ✅ закриваємо тільки після успіху
+    },
+    onError: () => {
+      toast.error('Failed to create note ❌');
     },
   });
 
@@ -43,7 +53,6 @@ function App() {
     tag: string;
   }) => {
     mutation.mutate(data);
-    setIsOpen(false);
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -54,7 +63,11 @@ function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        <button className={css.button} onClick={() => setIsOpen(true)}>
+        <button
+          className={css.button}
+          onClick={() => setIsOpen(true)}
+          disabled={mutation.isPending}
+        >
           Create note +
         </button>
       </header>
@@ -93,6 +106,9 @@ function App() {
           <NoteForm onSubmit={handleCreate} />
         </Modal>
       )}
+
+      {/* 🔽 TOAST */}
+      <Toaster position="top-right" />
     </div>
   );
 }
