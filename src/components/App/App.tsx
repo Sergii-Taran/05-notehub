@@ -11,7 +11,8 @@ import { useDebounce } from 'use-debounce';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
-import { fetchNotes, createNote } from '../../services/noteService';
+import { fetchNotes, createNote, deleteNote } from '../../services/noteService';
+
 import type { CreateNoteDto, NotesResponse } from '../../types/note';
 
 import NoteList from '../NoteList/NoteList';
@@ -31,21 +32,19 @@ function App() {
 
   const queryClient = useQueryClient();
 
-  // 🔽 GET notes
+  // 📥 GET notes
   const { data, isLoading, isError, isFetching } = useQuery<NotesResponse>({
     queryKey: ['notes', page, debouncedSearch],
     queryFn: () => fetchNotes(page, debouncedSearch),
     placeholderData: keepPreviousData,
   });
 
-  // 🔽 CREATE note
-  const mutation = useMutation({
+  // ➕ CREATE note
+  const createMutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
       toast.success('Note created successfully ✅');
-
       queryClient.invalidateQueries({ queryKey: ['notes'] });
-
       setIsOpen(false);
     },
     onError: () => {
@@ -53,11 +52,29 @@ function App() {
     },
   });
 
-  // 🔽 submit form
+  // ❌ DELETE note (ФІКС ТУТ)
+  const deleteMutation = useMutation<void, Error, string>({
+    mutationFn: deleteNote,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
+      toast.success('Note deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete note');
+    },
+  });
+
+  // 🧠 handlers
   const handleCreate = (data: CreateNoteDto) => {
-    mutation.mutate(data);
+    createMutation.mutate(data);
   };
 
+  const handleDelete = (id: string) => {
+    if (!id) return;
+    deleteMutation.mutate(id);
+  };
+
+  // ⏳ стани
   if (isLoading) return <p>Loading...</p>;
   if (isError) return <p>Error loading notes</p>;
 
@@ -70,14 +87,14 @@ function App() {
           value={search}
           onChange={(value) => {
             setSearch(value);
-            setPage(1); // ✅ правильне місце
+            setPage(1);
           }}
         />
 
         <button
           className={css.button}
           onClick={() => setIsOpen(true)}
-          disabled={mutation.isPending}
+          disabled={createMutation.isPending}
         >
           Create note +
         </button>
@@ -85,7 +102,12 @@ function App() {
 
       {data && (
         <>
-          <NoteList notes={data.notes} />
+          <NoteList
+            notes={data.notes}
+            onDelete={handleDelete}
+            deletingId={deleteMutation.variables}
+            isDeleting={deleteMutation.isPending}
+          />
 
           <Pagination
             page={page}
@@ -97,14 +119,12 @@ function App() {
         </>
       )}
 
-      {/* 🔽 MODAL */}
       {isOpen && (
         <Modal onClose={() => setIsOpen(false)}>
           <NoteForm onSubmit={handleCreate} />
         </Modal>
       )}
 
-      {/* 🔽 TOAST */}
       <Toaster position="top-right" />
     </div>
   );
