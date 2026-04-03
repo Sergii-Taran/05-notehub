@@ -1,9 +1,10 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import type { CreateNoteDto } from '../../types/note';
 import css from './NoteForm.module.css';
 
 type Props = {
-  onSubmit: (data: { title: string; content: string; tag: string }) => void;
+  onSubmit: (data: CreateNoteDto) => void;
 };
 
 const validationSchema = Yup.object({

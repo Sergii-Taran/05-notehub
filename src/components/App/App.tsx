@@ -6,28 +6,35 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 
+import { useDebounce } from 'use-debounce';
+
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
 import { fetchNotes, createNote } from '../../services/noteService';
-import type { NotesResponse } from '../../types/note';
+import type { CreateNoteDto, NotesResponse } from '../../types/note';
 
 import NoteList from '../NoteList/NoteList';
 import Modal from '../Modal/Modal';
 import NoteForm from '../NoteForm/NoteForm';
+import Pagination from '../Pagination/Pagination';
+import SearchBox from '../SearchBox/SearchBox';
 
 import css from './App.module.css';
 
 function App() {
   const [page, setPage] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const [debouncedSearch] = useDebounce(search, 500);
 
   const queryClient = useQueryClient();
 
   // 🔽 GET notes
   const { data, isLoading, isError, isFetching } = useQuery<NotesResponse>({
-    queryKey: ['notes', page],
-    queryFn: () => fetchNotes(page),
+    queryKey: ['notes', page, debouncedSearch],
+    queryFn: () => fetchNotes(page, debouncedSearch),
     placeholderData: keepPreviousData,
   });
 
@@ -39,7 +46,7 @@ function App() {
 
       queryClient.invalidateQueries({ queryKey: ['notes'] });
 
-      setIsOpen(false); // ✅ закриваємо тільки після успіху
+      setIsOpen(false);
     },
     onError: () => {
       toast.error('Failed to create note ❌');
@@ -47,11 +54,7 @@ function App() {
   });
 
   // 🔽 submit form
-  const handleCreate = (data: {
-    title: string;
-    content: string;
-    tag: string;
-  }) => {
+  const handleCreate = (data: CreateNoteDto) => {
     mutation.mutate(data);
   };
 
@@ -63,6 +66,14 @@ function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
+        <SearchBox
+          value={search}
+          onChange={(value) => {
+            setSearch(value);
+            setPage(1); // ✅ правильне місце
+          }}
+        />
+
         <button
           className={css.button}
           onClick={() => setIsOpen(true)}
@@ -76,25 +87,11 @@ function App() {
         <>
           <NoteList notes={data.notes} />
 
-          <div>
-            <button
-              onClick={() => setPage((prev) => prev - 1)}
-              disabled={page === 1}
-            >
-              Prev
-            </button>
-
-            <span>
-              Page: {page} / {totalPages}
-            </span>
-
-            <button
-              onClick={() => setPage((prev) => prev + 1)}
-              disabled={page === totalPages}
-            >
-              Next
-            </button>
-          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
 
           {isFetching && <p>Updating...</p>}
         </>
