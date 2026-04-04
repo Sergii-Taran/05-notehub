@@ -26,6 +26,7 @@ import NoteForm from '../NoteForm/NoteForm';
 import Pagination from '../Pagination/Pagination';
 import SearchBox from '../SearchBox/SearchBox';
 import Loader from '../Loader/Loader';
+import StatusMessage from '../StatusMessage/StatusMessage';
 
 import css from './App.module.css';
 
@@ -95,7 +96,8 @@ function App() {
 
   // ⏳ стани
   if (isLoading) return <Loader />;
-  if (isError) return <p>Error loading notes</p>;
+  if (isError)
+    return <StatusMessage type="error" message="Failed to load notes" />;
 
   return (
     <div className={css.app}>
@@ -143,7 +145,9 @@ function App() {
       )}
 
       {/* 🔽 Empty */}
-      {notes.length === 0 && <p>No notes found</p>}
+      {notes.length === 0 && (
+        <StatusMessage type="empty" message="No notes found" />
+      )}
 
       {/* 🔽 MODAL */}
       {isOpen && (
