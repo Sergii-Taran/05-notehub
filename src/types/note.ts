@@ -3,16 +3,12 @@ export interface Note {
   title: string;
   content: string;
   createdAt: string;
+  tag?: string;
 }
 
 export interface NoteTag {
   id: string;
   name: string;
-}
-
-export interface NotesResponse {
-  notes: Note[];
-  totalPages: number;
 }
 
 export interface CreateNoteDto {

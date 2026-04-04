@@ -18,12 +18,12 @@ export default function NoteList({
     <ul className={css.list}>
       {notes.map((note) => (
         <li key={note.id} className={css.listItem}>
-          <h3 className={css.title}>{note.title}</h3>
+          <h2 className={css.title}>{note.title}</h2>
 
           <p className={css.content}>{note.content}</p>
 
           <div className={css.footer}>
-            <span className={css.tag}>Note</span>
+            <span className={css.tag}>{note.tag ?? 'Note'}</span>
 
             <button
               className={css.button}

@@ -6,38 +6,53 @@ import {
   keepPreviousData,
 } from '@tanstack/react-query';
 
-import { useDebounce } from 'use-debounce';
+import { useDebouncedCallback } from 'use-debounce';
 
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 
-import { fetchNotes, createNote, deleteNote } from '../../services/noteService';
+import {
+  fetchNotes,
+  createNote,
+  deleteNote,
+  type FetchNotesResponse,
+} from '../../services/noteService';
 
-import type { CreateNoteDto, NotesResponse } from '../../types/note';
+import type { CreateNoteDto, Note } from '../../types/note';
 
 import NoteList from '../NoteList/NoteList';
 import Modal from '../Modal/Modal';
 import NoteForm from '../NoteForm/NoteForm';
 import Pagination from '../Pagination/Pagination';
 import SearchBox from '../SearchBox/SearchBox';
+import Loader from '../Loader/Loader';
 
 import css from './App.module.css';
 
 function App() {
   const [page, setPage] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
 
-  const [debouncedSearch] = useDebounce(search, 500);
+  // 🔍 search
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const queryClient = useQueryClient();
 
+  // ✅ debounce callback (по ТЗ)
+  const debounced = useDebouncedCallback((value: string) => {
+    setDebouncedSearch(value);
+    setPage(1);
+  }, 500);
+
   // 📥 GET notes
-  const { data, isLoading, isError, isFetching } = useQuery<NotesResponse>({
-    queryKey: ['notes', page, debouncedSearch],
-    queryFn: () => fetchNotes(page, debouncedSearch),
-    placeholderData: keepPreviousData,
-  });
+  const { data, isLoading, isError, isFetching } = useQuery<FetchNotesResponse>(
+    {
+      queryKey: ['notes', page, debouncedSearch],
+      queryFn: () => fetchNotes(page, debouncedSearch),
+      placeholderData: keepPreviousData,
+    }
+  );
 
   // ➕ CREATE note
   const createMutation = useMutation({
@@ -52,12 +67,12 @@ function App() {
     },
   });
 
-  // ❌ DELETE note (ФІКС ТУТ)
-  const deleteMutation = useMutation<void, Error, string>({
+  // ❌ DELETE note
+  const deleteMutation = useMutation<Note, Error, string>({
     mutationFn: deleteNote,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
       toast.success('Note deleted');
+      queryClient.invalidateQueries({ queryKey: ['notes'] });
     },
     onError: () => {
       toast.error('Failed to delete note');
@@ -74,23 +89,36 @@ function App() {
     deleteMutation.mutate(id);
   };
 
-  // ⏳ стани
-  if (isLoading) return <p>Loading...</p>;
-  if (isError) return <p>Error loading notes</p>;
-
+  // 📦 safe data
+  const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
+
+  // ⏳ стани
+  if (isLoading) return <Loader />;
+  if (isError) return <p>Error loading notes</p>;
 
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
+        {/* 🔍 Search */}
         <SearchBox
           value={search}
           onChange={(value) => {
-            setSearch(value);
-            setPage(1);
+            setSearch(value); // миттєво оновлюємо input
+            debounced(value); // debounce запиту
           }}
         />
 
+        {/* 📑 Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        )}
+
+        {/* ➕ Create */}
         <button
           className={css.button}
           onClick={() => setIsOpen(true)}
@@ -100,31 +128,31 @@ function App() {
         </button>
       </header>
 
-      {data && (
+      {/* 📄 Notes */}
+      {notes.length > 0 && (
         <>
           <NoteList
-            notes={data.notes}
+            notes={notes}
             onDelete={handleDelete}
             deletingId={deleteMutation.variables}
             isDeleting={deleteMutation.isPending}
           />
 
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
-
-          {isFetching && <p>Updating...</p>}
+          {isFetching && <Loader small />}
         </>
       )}
 
+      {/* 🔽 Empty */}
+      {notes.length === 0 && <p>No notes found</p>}
+
+      {/* 🔽 MODAL */}
       {isOpen && (
         <Modal onClose={() => setIsOpen(false)}>
-          <NoteForm onSubmit={handleCreate} />
+          <NoteForm onSubmit={handleCreate} onCancel={() => setIsOpen(false)} />
         </Modal>
       )}
 
+      {/* 🔔 TOAST */}
       <Toaster position="top-right" />
     </div>
   );
