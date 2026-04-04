@@ -34,19 +34,19 @@ function App() {
   const [page, setPage] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
 
-  // 🔍 search
+  // search
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const queryClient = useQueryClient();
 
-  // ✅ debounce callback (по ТЗ)
+  // debounce callback
   const debounced = useDebouncedCallback((value: string) => {
     setDebouncedSearch(value);
     setPage(1);
   }, 500);
 
-  // 📥 GET notes
+  // GET notes
   const { data, isLoading, isError, isFetching } = useQuery<FetchNotesResponse>(
     {
       queryKey: ['notes', page, debouncedSearch],
@@ -55,7 +55,7 @@ function App() {
     }
   );
 
-  // ➕ CREATE note
+  // CREATE note
   const createMutation = useMutation({
     mutationFn: createNote,
     onSuccess: () => {
@@ -68,7 +68,7 @@ function App() {
     },
   });
 
-  // ❌ DELETE note
+  // DELETE note
   const deleteMutation = useMutation<Note, Error, string>({
     mutationFn: deleteNote,
     onSuccess: () => {
@@ -80,7 +80,7 @@ function App() {
     },
   });
 
-  // 🧠 handlers
+  // handlers
   const handleCreate = (data: CreateNoteDto) => {
     createMutation.mutate(data);
   };
@@ -90,11 +90,11 @@ function App() {
     deleteMutation.mutate(id);
   };
 
-  // 📦 safe data
+  // safe data
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  // ⏳ стани
+  // стани
   if (isLoading) return <Loader />;
   if (isError)
     return <StatusMessage type="error" message="Failed to load notes" />;
@@ -102,16 +102,16 @@ function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        {/* 🔍 Search */}
+        {/* Search */}
         <SearchBox
           value={search}
           onChange={(value) => {
-            setSearch(value); // миттєво оновлюємо input
-            debounced(value); // debounce запиту
+            setSearch(value);
+            debounced(value);
           }}
         />
 
-        {/* 📑 Pagination */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <Pagination
             page={page}
@@ -120,7 +120,7 @@ function App() {
           />
         )}
 
-        {/* ➕ Create */}
+        {/* Create */}
         <button
           className={css.button}
           onClick={() => setIsOpen(true)}
@@ -130,7 +130,7 @@ function App() {
         </button>
       </header>
 
-      {/* 📄 Notes */}
+      {/* Notes */}
       {notes.length > 0 && (
         <>
           <NoteList
@@ -140,23 +140,23 @@ function App() {
             isDeleting={deleteMutation.isPending}
           />
 
-          {isFetching && <Loader small />}
+          {isFetching && notes.length > 0 && <Loader small />}
         </>
       )}
 
-      {/* 🔽 Empty */}
+      {/* Empty */}
       {notes.length === 0 && (
         <StatusMessage type="empty" message="No notes found" />
       )}
 
-      {/* 🔽 MODAL */}
+      {/* MODAL */}
       {isOpen && (
         <Modal onClose={() => setIsOpen(false)}>
           <NoteForm onSubmit={handleCreate} onCancel={() => setIsOpen(false)} />
         </Modal>
       )}
 
-      {/* 🔔 TOAST */}
+      {/* TOAST */}
       <Toaster position="top-right" />
     </div>
   );

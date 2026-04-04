@@ -1,7 +1,7 @@
 import css from './Loader.module.css';
 
 type Props = {
-  small?: boolean; // маленький чи великий
+  small?: boolean;
 };
 
 export default function Loader({ small = false }: Props) {

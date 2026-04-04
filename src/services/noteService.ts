@@ -1,7 +1,6 @@
 import axios from 'axios';
 import type { CreateNoteDto, Note } from '../types/note';
 
-// ✅ ТУТ тепер response інтерфейс (по ТЗ)
 export interface FetchNotesResponse {
   notes: Note[];
   totalPages: number;
