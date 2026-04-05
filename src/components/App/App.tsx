@@ -1,24 +1,14 @@
 import { useState } from 'react';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
 import { useDebouncedCallback } from 'use-debounce';
 
 import { Toaster } from 'react-hot-toast';
-import toast from 'react-hot-toast';
 
 import {
   fetchNotes,
-  createNote,
-  deleteNote,
   type FetchNotesResponse,
 } from '../../services/noteService';
-
-import type { CreateNoteDto, Note } from '../../types/note';
 
 import NoteList from '../NoteList/NoteList';
 import Modal from '../Modal/Modal';
@@ -34,19 +24,14 @@ function App() {
   const [page, setPage] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
 
-  // search
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const queryClient = useQueryClient();
-
-  // debounce callback
   const debounced = useDebouncedCallback((value: string) => {
     setDebouncedSearch(value);
     setPage(1);
   }, 500);
 
-  // GET notes
   const { data, isLoading, isError, isFetching } = useQuery<FetchNotesResponse>(
     {
       queryKey: ['notes', page, debouncedSearch],
@@ -55,46 +40,13 @@ function App() {
     }
   );
 
-  // CREATE note
-  const createMutation = useMutation({
-    mutationFn: createNote,
-    onSuccess: () => {
-      toast.success('Note created successfully ✅');
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      setIsOpen(false);
-    },
-    onError: () => {
-      toast.error('Failed to create note ❌');
-    },
-  });
-
-  // DELETE note
-  const deleteMutation = useMutation<Note, Error, string>({
-    mutationFn: deleteNote,
-    onSuccess: () => {
-      toast.success('Note deleted');
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-    },
-    onError: () => {
-      toast.error('Failed to delete note');
-    },
-  });
-
-  // handlers
-  const handleCreate = (data: CreateNoteDto) => {
-    createMutation.mutate(data);
-  };
-
-  const handleDelete = (id: string) => {
-    if (!id) return;
-    deleteMutation.mutate(id);
-  };
-
-  // safe data
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    debounced(value);
+  };
 
-  // стани
   if (isLoading) return <Loader />;
   if (isError)
     return <StatusMessage type="error" message="Failed to load notes" />;
@@ -102,16 +54,8 @@ function App() {
   return (
     <div className={css.app}>
       <header className={css.toolbar}>
-        {/* Search */}
-        <SearchBox
-          value={search}
-          onChange={(value) => {
-            setSearch(value);
-            debounced(value);
-          }}
-        />
+        <SearchBox value={search} onChange={handleSearchChange} />
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <Pagination
             page={page}
@@ -120,43 +64,29 @@ function App() {
           />
         )}
 
-        {/* Create */}
-        <button
-          className={css.button}
-          onClick={() => setIsOpen(true)}
-          disabled={createMutation.isPending}
-        >
+        <button className={css.button} onClick={() => setIsOpen(true)}>
           Create note +
         </button>
       </header>
 
-      {/* Notes */}
       {notes.length > 0 && (
         <>
-          <NoteList
-            notes={notes}
-            onDelete={handleDelete}
-            deletingId={deleteMutation.variables}
-            isDeleting={deleteMutation.isPending}
-          />
+          <NoteList notes={notes} />
 
           {isFetching && notes.length > 0 && <Loader small />}
         </>
       )}
 
-      {/* Empty */}
       {notes.length === 0 && (
         <StatusMessage type="empty" message="No notes found" />
       )}
 
-      {/* MODAL */}
       {isOpen && (
         <Modal onClose={() => setIsOpen(false)}>
-          <NoteForm onSubmit={handleCreate} onCancel={() => setIsOpen(false)} />
+          <NoteForm onClose={() => setIsOpen(false)} />
         </Modal>
       )}
 
-      {/* TOAST */}
       <Toaster position="top-right" />
     </div>
   );
