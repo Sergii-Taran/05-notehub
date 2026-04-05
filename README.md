@@ -59,12 +59,18 @@ src/
 ```bash
 git clone https://github.com/your-username/notehub.git
 cd notehub
-Install dependencies:
+
+2. Install dependencies:
 npm install
-Create .env file:
+
+3. Create .env file:
 VITE_NOTEHUB_TOKEN=your_api_token
-Run the project:
+
+4. Run the project:
 npm run dev
+
+---
+
 🌐 API
 
 The app uses the public API:
@@ -76,6 +82,9 @@ Endpoints used:
 GET /notes — fetch notes
 POST /notes — create note
 DELETE /notes/:id — delete note
+
+---
+
 🧠 Key Implementation Details
 🔍 Debounced Search
 
@@ -97,6 +106,8 @@ After mutations:
 
 queryClient.invalidateQueries({ queryKey: ['notes'] });
 
+---
+
 🎯 Tags
 
 Each note must include one of the following tags:
@@ -106,6 +117,9 @@ Work
 Personal
 Meeting
 Shopping
+
+---
+
 🖼 UI/UX Highlights
 Centered loader
 Disabled buttons during async actions
@@ -115,17 +129,25 @@ Modal with:
 ESC close
 backdrop click close
 scroll lock
+
+---
+
 📌 Future Improvements
 ✏️ Edit (update note)
 🗂 Filter by tag
 🌙 Dark mode
 📱 Mobile optimization
 
+---
+
 👨‍💻 Author
 
 Sergii Taran
 
+---
+
 📄 License
 
 This project is for educational purposes.
+
 ```
